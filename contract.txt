@@ -1,0 +1,3 @@
+0xA9F665f0dA7e89154BB8458dd8772B7DdfA8A3D4
+
+wss://goerli.infura.io/ws/v3/96c433cb36d444239d3e8024e1d0efb1

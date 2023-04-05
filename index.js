@@ -2,14 +2,20 @@ var express = require('express');
 const { createWallet } = require('./wallet/createWallet');
 var app = express();
 
-
-
-
-app.get('/', function (req, res) {
-  res.send('Hello World!');
+const router = express.Router();
+router.get("/", (req, res) => {
+  res.json({
+    hello: "hi!"
+  });
 });
 
-app.get('/createwallet',async function (req, res) {
+app.use(`/.netlify/functions/api`, router);
+
+// app.get('/', function (req, res) {
+//   res.send('Hello World!');
+// });
+
+router.get('/createwallet',async function (req, res) {
     res.send('Hello World!');
   await  createWallet();
 });
@@ -17,3 +23,4 @@ app.get('/createwallet',async function (req, res) {
 app.listen(3000, function () {
   console.log('Example app listening on port 3000!');
 });
+

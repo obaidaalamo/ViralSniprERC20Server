@@ -2,20 +2,11 @@ var express = require('express');
 const { createWallet } = require('./wallet/createWallet');
 var app = express();
 
-const router = express.Router();
-router.get("/", (req, res) => {
-  res.json({
-    hello: "hi!"
-  });
+app.get('/', function (req, res) {
+  res.send('Hello World!');
 });
 
-app.use(`/.netlify/functions/api`, router);
-
-// app.get('/', function (req, res) {
-//   res.send('Hello World!');
-// });
-
-router.get('/createwallet',async function (req, res) {
+app.get('/createwallet',async function (req, res) {
     res.send('Hello World!');
   await  createWallet();
 });

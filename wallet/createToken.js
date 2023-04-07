@@ -1,29 +1,22 @@
 const abi = require("../abi.json");
+const { getContractByNetwork, getNetwork } = require("../Network");
 
-async function createToken(web3,tokenInfo) {
-  const x2y2Contract = new web3.eth.Contract(
-    abi,
-    "0xA9F665f0dA7e89154BB8458dd8772B7DdfA8A3D4"
+async function createToken(web3, tokenInfo) {
+  const contract = new web3.eth.Contract(abi, getContractByNetwork());
+
+  tx = await contract.methods.deployAdvancedToken(
+    tokenInfo.name,
+    tokenInfo.symbol,
+    tokenInfo.decimals,
+    tokenInfo._supply,
+    tokenInfo.maxSupply,
+    tokenInfo._owner
   );
 
-  tx = await x2y2Contract.methods.deployAdvancedToken(
-    "nono",
-    "soso",
-    18,
-    10000000,
-    1000000000,
-    "0x530e0DcABe13c6833058Bb91DE4f9e886a62CC4c"
-  );
-
-
-  await submitTransaction(
-    tx,
-    "0x530e0DcABe13c6833058Bb91DE4f9e886a62CC4c",
-    web3.eth
-  );
+  await submitTransaction(tx, tokenInfo._owner, web3.eth, tokenInfo.privateKey);
 }
 
-const submitTransaction = async (tx, backendWallet, eth) => {
+const submitTransaction = async (tx, backendWallet, eth, privateKey) => {
   let nonce;
   let dataCode;
   let gasPrice;
@@ -62,14 +55,14 @@ const submitTransaction = async (tx, backendWallet, eth) => {
   }
   const signedTx = await eth.accounts.signTransaction(
     {
-      to: "0xA9F665f0dA7e89154BB8458dd8772B7DdfA8A3D4",
-      data:dataCode,
+      to: getContractByNetwork(),
+      data: dataCode,
       gas,
       gasPrice,
       nonce,
-      chainId: 5,
+      chainId: getNetwork(),
     },
-    "0x1d3a5fd7668c9f09ab535ff7eabc1a54d543810c4044700b0f5d99b51d11ffe4"
+    privateKey
   );
   const receipt = await eth.sendSignedTransaction(signedTx.rawTransaction);
   console.log(`Transaction hash: ${receipt.transactionHash}`);

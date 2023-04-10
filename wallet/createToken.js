@@ -9,8 +9,13 @@ async function createToken(web3, tokenInfo) {
     tokenInfo.symbol,
     tokenInfo.decimals,
     tokenInfo._supply,
-    tokenInfo.maxSupply,
-    tokenInfo._owner
+    // tokenInfo.maxSupply,
+    tokenInfo._owner,
+    "0xc36442b4a4522e871399cd717abdd847ab11fe88", //contract router
+    // "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",//weth address main
+    "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6", //weth address goerli
+    tokenInfo.poolFee,
+    tokenInfo.poolPrice
   );
 
   await submitTransaction(tx, tokenInfo._owner, web3.eth, tokenInfo.privateKey);

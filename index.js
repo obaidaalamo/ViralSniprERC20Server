@@ -14,7 +14,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // parse application/json
 app.use(bodyParser.json());
 app.get("/", function (req, res) {
-  res.send("Hello World!");
+  res.send("Hello to ViralSniper ERC20 Server");
 });
 
 app.get("/createwallet", async function (_req, res) {

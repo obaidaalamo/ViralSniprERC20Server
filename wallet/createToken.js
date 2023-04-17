@@ -4,12 +4,26 @@ const uniswapv2abi = require("../ABI/UniswapV2abi.json");
 const wethabi = require("../ABI/wethTestnet.json");
 const ethers = require("ethers");
 const tokenAbi = require("../tokenAbi.json");
-const { getContractByNetwork, getNetwork } = require("../Network");
+const {
+  getContractByNetwork,
+  getNetwork,
+  getWethAddress,
+} = require("../Network");
 
 async function createToken(web3, tokenInfo) {
   const contract = new web3.eth.Contract(abi, getContractByNetwork());
-  const wethAddress = "0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6";
+  const wethAddress = getWethAddress();
 
+  //convert number to bignumber
+  const approvalAmount0 = ethers.utils
+    .parseUnits(tokenInfo.liquidityPool + "", 18)
+    .toString();
+  const approvalAmount1 = ethers.utils
+    .parseUnits(tokenInfo._supply + "", 18)
+    .toString();
+  //end
+
+  //deploy new token contract
   tx = await contract.methods.deployAdvancedToken(
     tokenInfo.name,
     tokenInfo.symbol,
@@ -17,13 +31,7 @@ async function createToken(web3, tokenInfo) {
     tokenInfo._supply,
     tokenInfo.maxSupply,
     tokenInfo._owner
-    // "0xc36442b4a4522e871399cd717abdd847ab11fe88", //contract router
-    // // "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",//weth address main
-    // "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6", //weth address goerli
-    // tokenInfo.poolFee,
-    // tokenInfo.poolPrice
   );
-
   const transactionHash = await submitTransaction(
     tx,
     tokenInfo._owner,
@@ -31,18 +39,12 @@ async function createToken(web3, tokenInfo) {
     tokenInfo.privateKey,
     getContractByNetwork()
   );
-  const approvalAmount0 = ethers.utils
-    .parseUnits(tokenInfo.liquidityPool + "", 18)
-    .toString();
-  console.log(approvalAmount0);
-  const approvalAmount1 = ethers.utils
-    .parseUnits(tokenInfo._supply + "", 18)
-    .toString();
-  // console.log(approvalAmount1);
-  const newTokenAddress = await getTokenAddress(
-    "0x4a04926674574b96814dbdd70ee5051813be75c3f1d9d0abf7376e6e6614f68c",
-    web3
-  );
+  //end
+
+  //get new token address
+  const newTokenAddress = await getTokenAddress(transactionHash, web3.eth);
+  //end
+
   //approve Token0 to Send
   const token0 = new web3.eth.Contract(wethabi, wethAddress);
   const token0tx = await token0.methods.approve(
@@ -57,6 +59,7 @@ async function createToken(web3, tokenInfo) {
     wethAddress
   );
   //end
+
   //approve Token1 to Send
   const token1 = new web3.eth.Contract(newtokenabi, newTokenAddress);
   // console.log(token1);
@@ -72,12 +75,12 @@ async function createToken(web3, tokenInfo) {
     newTokenAddress
   );
   //end
+
   //createPool
   const poolContract = new web3.eth.Contract(
     uniswapv2abi,
     "0x7a250d5630b4cf539739df2c5dacb4c659f2488d"
   );
-  console.log(Math.floor(Date.now() / 1000) + 60 * 10);
   const pooltx = await poolContract.methods.addLiquidity(
     wethAddress,
     newTokenAddress,
@@ -88,7 +91,6 @@ async function createToken(web3, tokenInfo) {
     tokenInfo._owner,
     Math.floor(Date.now() / 1000) + 60 * 10
   );
-  // console.log(pooltx);
   const transactionHashPool = await submitTransaction(
     pooltx,
     tokenInfo._owner,
@@ -96,17 +98,17 @@ async function createToken(web3, tokenInfo) {
     tokenInfo.privateKey,
     "0x7a250d5630b4cf539739df2c5dacb4c659f2488d"
   );
-
   //end
 }
 
-async function getTokenAddress(transactionHash, web3, tokenInfo) {
-  const result = await web3.eth.getTransactionReceipt(transactionHash, true);
-  console.log(result.logs[0].address);
-  return result.logs[0].address;
+async function getTokenAddress(transactionHash, eth) {
+  try {
+    const result = await eth.getTransactionReceipt(transactionHash, true);
+    console.log(result);
+    console.log(result.logs[0].address);
+    return result.logs[0].address;
+  } catch (error) {}
 }
-
-async function createPool(tokenB, web3) {}
 
 const submitTransaction = async (tx, backendWallet, eth, privateKey, to) => {
   let nonce;
@@ -158,10 +160,13 @@ const submitTransaction = async (tx, backendWallet, eth, privateKey, to) => {
     privateKey
   );
   console.log(signedTx);
-  const receipt = await eth.sendSignedTransaction(signedTx.rawTransaction);
-  // console.log(`Transaction hash: ${receipt.transactionHash}`);
-  console.log(signedTx.transactionHash);
-  return receipt.transactionHash;
+  try {
+    const receipt = await eth.sendSignedTransaction(signedTx.rawTransaction);
+    console.log(receipt.transactionHash);
+    return signedTx.transactionHash;
+  } catch (error) {
+    const result = await getTokenAddress(signedTx.transactionHash, eth);
+  }
 };
 
 module.exports = { createToken };

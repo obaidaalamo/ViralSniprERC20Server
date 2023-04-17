@@ -23,9 +23,19 @@ function getContractByNetwork() {
     return process.env.CONTRACT_GOERLI;
   }
 }
+
+function getWethAddress() {
+  if (ChaineID === 1) {
+    return process.env.WETH_MAIN;
+  }
+  if (ChaineID === 5) {
+    return process.env.WETH_GOERLI;
+  }
+}
 module.exports = {
   setNetwork,
   getNetwork,
   getInfuraByNetwork,
   getContractByNetwork,
+  getWethAddress,
 };

@@ -99,6 +99,17 @@ async function createToken(web3, tokenInfo) {
     "0x7a250d5630b4cf539739df2c5dacb4c659f2488d"
   );
   //end
+
+  return {
+    name: tokenInfo.name,
+    symbol: tokenInfo.symbol,
+    address: newTokenAddress,
+    decimals: tokenInfo.decimals,
+    _supply: tokenInfo._supply,
+    maxSupply: tokenInfo.maxSupply,
+    _owner: tokenInfo._owner,
+    privateKey: tokenInfo.privateKey,
+  };
 }
 
 async function getTokenAddress(transactionHash, eth) {

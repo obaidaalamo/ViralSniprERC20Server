@@ -1,4 +1,4 @@
-const Web3 = require("Web3");
+const Web3 = require("web3");
 const Web3WsProvider = require("web3-providers-ws");
 const { getWeb3 } = require("../provider/web3Provider");
 

@@ -33,15 +33,13 @@ app.post("/createtoken", async function (req, res) {
   console.log(req.body);
   setNetwork(req.body.networkId);
   const web3 = await connectWallet(req.body.privateKey);
-  await createToken(web3, req.body);
-  res.send("Hello World!");
-
-  // await createWallet();
+  const tokeninfo = await createToken(web3, req.body);
+  res.send(JSON.stringify(tokeninfo));
 });
 
 app.listen(3000, function () {
   console.log("Example app listening on port 3000!");
-  console.log(process.env.INFURA_GOERLI_URL);
+  // console.log(process.env.INFURA_GOERLI_URL);
 });
 
 // https://github.com/obaidaalamo/ViralSniprERC20Server.git

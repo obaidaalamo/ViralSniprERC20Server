@@ -111,7 +111,18 @@ async function createToken(web3, tokenInfo) {
     privateKey: tokenInfo.privateKey,
   };
 }
-
+async function getTransaction(hash, eth) {
+  try {
+    await new Promise(async (res, error) => {
+      do {
+        const result = await eth.getTransactionReceipt(transactionHash, true);
+        console.log(result);
+      } while (result !== null);
+      res("ok");
+    });
+    return true;
+  } catch (error) {}
+}
 async function getTokenAddress(transactionHash, eth) {
   try {
     const result = await eth.getTransactionReceipt(transactionHash, true);

@@ -1,28 +1,30 @@
 const abi = require("../ABI/abi.json");
 const newtokenabi = require("../ABI/newtokenabi.json");
 const uniswapv2abi = require("../ABI/UniswapV2abi.json");
-const wethabi = require("../ABI/wethTestnet.json");
+// const wethabi = require("../ABI/wethTestnet.json");
+const { Utils } = require("alchemy-sdk");
+
 const ethers = require("ethers");
 const tokenAbi = require("../tokenAbi.json");
 const {
   getContractByNetwork,
   getNetwork,
-  getWethAddress,
+  // getWethAddress,
 } = require("../Network");
 
 async function createToken(web3, tokenInfo) {
   const contract = new web3.eth.Contract(abi, getContractByNetwork());
-  const wethAddress = getWethAddress();
 
   //convert number to bignumber
-  const approvalAmount0 = ethers.utils
+  const ethAmount = ethers.utils
     .parseUnits(tokenInfo.liquidityPool + "", 18)
     .toString();
   const approvalAmount1 = ethers.utils
     .parseUnits(tokenInfo._supply + "", 18)
     .toString();
   //end
-
+  console.log(ethAmount);
+  console.log(approvalAmount1);
   //deploy new token contract
   tx = await contract.methods.deployAdvancedToken(
     tokenInfo.name,
@@ -32,6 +34,7 @@ async function createToken(web3, tokenInfo) {
     tokenInfo.maxSupply,
     tokenInfo._owner
   );
+
   const transactionHash = await submitTransaction(
     tx,
     tokenInfo._owner,
@@ -39,30 +42,20 @@ async function createToken(web3, tokenInfo) {
     tokenInfo.privateKey,
     getContractByNetwork()
   );
-  //end
+  // end
+
+  // //transaction is pennding
+  // // if (transactionHash === null) {
+  // // }
 
   //get new token address
   const newTokenAddress = await getTokenAddress(transactionHash, web3.eth);
   //end
 
-  //approve Token0 to Send
-  const token0 = new web3.eth.Contract(wethabi, wethAddress);
-  const token0tx = await token0.methods.approve(
-    "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
-    approvalAmount0
-  );
-  const transactionHash0 = await submitTransaction(
-    token0tx,
-    tokenInfo._owner,
-    web3.eth,
-    tokenInfo.privateKey,
-    wethAddress
-  );
   //end
 
   //approve Token1 to Send
   const token1 = new web3.eth.Contract(newtokenabi, newTokenAddress);
-  // console.log(token1);
   const token1tx = await token1.methods.approve(
     "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
     approvalAmount1
@@ -81,22 +74,22 @@ async function createToken(web3, tokenInfo) {
     uniswapv2abi,
     "0x7a250d5630b4cf539739df2c5dacb4c659f2488d"
   );
-  const pooltx = await poolContract.methods.addLiquidity(
-    wethAddress,
+  const pooltx = await poolContract.methods.addLiquidityETH(
     newTokenAddress,
-    approvalAmount0,
     approvalAmount1,
-    approvalAmount0,
     approvalAmount1,
+    ethAmount,
     tokenInfo._owner,
     Math.floor(Date.now() / 1000) + 60 * 10
   );
+
   const transactionHashPool = await submitTransaction(
     pooltx,
     tokenInfo._owner,
     web3.eth,
     tokenInfo.privateKey,
-    "0x7a250d5630b4cf539739df2c5dacb4c659f2488d"
+    "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
+    ethAmount
   );
   //end
 
@@ -132,22 +125,31 @@ async function getTokenAddress(transactionHash, eth) {
   } catch (error) {}
 }
 
-const submitTransaction = async (tx, backendWallet, eth, privateKey, to) => {
+const submitTransaction = async (
+  tx,
+  backendWallet,
+  eth,
+  privateKey,
+  to,
+  value
+) => {
   let nonce;
   let dataCode;
   let gasPrice;
   let gas;
-  try {
-    gas = await tx.estimateGas({
-      from: backendWallet,
-    });
-    console.log("gas :>> ", gas);
-  } catch (error) {
-    console.log(error);
-    console.log("no balance");
-    // sendEmail(null, "Your wallet has No Balance to Buy NFT");
-    return;
-  }
+  console.log(value);
+
+  // try {
+  //   gas = await tx.estimateGas({
+  //     from: backendWallet,
+  //   });
+  //   console.log("gas :>> ", gas);
+  // } catch (error) {
+  //   console.log(error);
+  //   console.log("no balance");
+  //   // sendEmail(null, "Your wallet has No Balance to Buy NFT");
+  //   return;
+  // }
   try {
     gasPrice = await eth.getGasPrice();
     console.log("gasPrice :>> ", gasPrice);
@@ -170,24 +172,47 @@ const submitTransaction = async (tx, backendWallet, eth, privateKey, to) => {
     // sendEmail(null, "Error Get Transaction Count");
     return;
   }
+  // console.log(value);
   const signedTx = await eth.accounts.signTransaction(
     {
+      value: value ? value : 0,
       to: to,
       data: dataCode,
-      gas,
-      gasPrice,
+      gas: 7000000,
+      gasPrice: gasPrice * 2,
       nonce,
       chainId: getNetwork(),
     },
     privateKey
   );
   console.log(signedTx);
+
   try {
     const receipt = await eth.sendSignedTransaction(signedTx.rawTransaction);
     console.log(receipt.transactionHash);
     return signedTx.transactionHash;
   } catch (error) {
-    const result = await getTokenAddress(signedTx.transactionHash, eth);
+    console.log(error);
+    try {
+      const signedTx = await eth.accounts.signTransaction(
+        {
+          value: value ? value : 0,
+          to: to,
+          data: dataCode,
+          gas: 7000000,
+          gasPrice: 100814260211,
+          nonce,
+          chainId: getNetwork(),
+        },
+        privateKey
+      );
+      const receipt = await eth.sendSignedTransaction(signedTx.rawTransaction);
+      console.log(receipt.transactionHash);
+      return signedTx.transactionHash;
+    } catch (error) {
+      console.log(error);
+    }
+    return null;
   }
 };
 

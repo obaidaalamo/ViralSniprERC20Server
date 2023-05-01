@@ -17,6 +17,7 @@ function getInfuraByNetwork() {
   }
   return process.env.INFURA_MAIN_URL;
 }
+
 function getContractByNetwork() {
   if (ChaineID === 1) {
     return process.env.CONTRACT_MAIN;
@@ -36,6 +37,7 @@ function getWethAddress() {
   }
   return process.env.WETH_MAIN;
 }
+
 module.exports = {
   setNetwork,
   getNetwork,
